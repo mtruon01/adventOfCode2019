@@ -3,7 +3,7 @@
  * Created by Thong Truong (Tom)
  * Email: thong.truong@MadWireMedia.com
  * Date: 12/3/19
- * Time: 9:58 AM
+ * Time: 10:56 AM
  */
 
 $wire1 = "R999,D467,L84,D619,L49,U380,R287,U80,R744,D642,L340,U738,R959,U710,R882,U861,L130,D354,L579,D586,R798,D735,L661,D453,L828,U953,R604,D834,R921,D348,R620,U775,R364,U552,L221,U119,R590,U29,L267,D745,L128,U468,L978,D717,R883,D227,R691,D330,L33,U520,L862,D132,R99,U400,L455,U737,L603,U220,L689,U131,R158,D674,R617,D287,R422,U734,L73,U327,L525,D245,R849,D692,R114,U136,R762,D5,R329,U429,L849,U748,R816,U556,R614,D412,R416,D306,R307,U826,R880,U936,L164,U984,L689,D934,R790,D14,R561,D736,L3,D442,R301,D520,L451,U76,R844,D307,L144,D800,L462,D138,R956,U225,L393,D186,L924,D445,L86,D640,L920,D877,L197,U191,L371,D701,R826,D282,R856,D412,L788,D417,R69,D678,R978,D268,L268,U112,L69,U164,L748,U191,R227,D227,R59,U749,R134,U779,R865,U247,R55,D567,R821,U799,R937,D942,L445,D571,R685,D111,R107,D769,R269,D968,R102,U335,R538,U125,L725,D654,R451,D242,R777,U813,R799,D786,L804,U313,L322,U771,R219,U316,L973,U963,R84,D289,R825,D299,L425,D49,R995,D486,R550,D789,R735,D501,R966,U955,R432,U635,L353,D600,R675,D236,R864,U322,R719,D418,L877,U833,R839,D634,L533,D438,L734,U130,L578,U498,L984,D413,L615,U40,L699,U656,L653,U419,R856,U882,R30,D266,R386,D692,L210,U802,L390,U753,L406,U338,R743,D320,L125,U204,R391,U537,R887,D194,L302,U400,R510,U92,L310,D382,R597,U498,R851,D357,L568,U800,R918,D106,R673,D735,L86,D67,R398,D677,R355,D501,L909,D133,R729,D293,L498,U222,R832,U671,R751,U36,R422,U840,L636,D476,L292,D105,L239,U199,R669,U736,L345,D911,L277,U452,L979,D153,R882,U604,R602,U495,L311,U453,L215,D713,R873";
@@ -42,7 +42,9 @@ function drawWire(array &$circuitBoard, array $wireDirections, int $wireID, arra
 
     $currentHorizontal = 0;
     $currentVertical = 0;
+    $currentStepNum = 0;
 
+    //go through each direction of the wire and mark in on the circuit board
     foreach ($wireDirections as $direction) {
         $steps = substr($direction, 1);
         $direction = substr($direction, 0, 1);
@@ -51,28 +53,32 @@ function drawWire(array &$circuitBoard, array $wireDirections, int $wireID, arra
             case "R":
                 for ($i = 0; $i < $steps; $i++) {
                     $currentHorizontal++;
-                    markCircuitBoard($circuitBoard, $currentVertical, $currentHorizontal, $wireID, $intersections);
+                    $currentStepNum++;
+                    markCircuitBoard($circuitBoard, $currentVertical, $currentHorizontal, $wireID, $currentStepNum, $intersections);
                 }
                 break;
 
             case "D":
                 for ($i = 0; $i < $steps; $i++) {
                     $currentVertical--;
-                    markCircuitBoard($circuitBoard, $currentVertical, $currentHorizontal, $wireID, $intersections);
+                    $currentStepNum++;
+                    markCircuitBoard($circuitBoard, $currentVertical, $currentHorizontal, $wireID, $currentStepNum, $intersections);
                 }
                 break;
 
             case "L":
                 for ($i = 0; $i < $steps; $i++) {
                     $currentHorizontal--;
-                    markCircuitBoard($circuitBoard, $currentVertical, $currentHorizontal, $wireID, $intersections);
+                    $currentStepNum++;
+                    markCircuitBoard($circuitBoard, $currentVertical, $currentHorizontal, $wireID, $currentStepNum, $intersections);
                 }
                 break;
 
             case "U":
                 for ($i = 0; $i < $steps; $i++) {
                     $currentVertical++;
-                    markCircuitBoard($circuitBoard, $currentVertical, $currentHorizontal, $wireID, $intersections);
+                    $currentStepNum++;
+                    markCircuitBoard($circuitBoard, $currentVertical, $currentHorizontal, $wireID, $currentStepNum, $intersections);
                 }
                 break;
 
@@ -88,20 +94,31 @@ function drawWire(array &$circuitBoard, array $wireDirections, int $wireID, arra
  * @param int $vertical - the vertical coordinate to mark on the board
  * @param int $horizontal - the horizontal coordinate to mark on the board
  * @param int $wireID - the wire ID of this mark
+ * @param int $stepNum - the number of step the wire takes to reach here
  * @param array $intersections - an array contains all the intersections on the circuit board
  */
-function markCircuitBoard(array &$circuitBoard, int $vertical, int $horizontal, int $wireID, array &$intersections)
+function markCircuitBoard(array &$circuitBoard, int $vertical, int $horizontal, int $wireID, int $stepNum, array &$intersections)
 {
     //make sure we have not mark the coordination with this wire yet
+    //since we only need to store the lowest step the wire needs to reach here
     if (isset($circuitBoard[$vertical][$horizontal][$wireID]) === false) {
-        $circuitBoard[$vertical][$horizontal][$wireID] = "x";
-    }
+        $circuitBoard[$vertical][$horizontal][$wireID] = $stepNum;
 
-    //if there are multiple entries at this coordination, meaning this is an intersection
-    if (count($circuitBoard[$vertical][$horizontal]) > 1) {
-        //check for duplicate
-        if (isset($intersections[$vertical . "-" . $horizontal]) === false) {
-            $intersections[$vertical . "-" . $horizontal] = abs($vertical) + abs($horizontal);
+        //if there are multiple entries at this coordination, meaning this is an intersection
+        if (count($circuitBoard[$vertical][$horizontal]) > 1) {
+
+            //if the intersections already contains this coordinate, just add the additional stepNum to it
+            if (isset($intersections[$vertical . "-" . $horizontal]) === true) {
+                $intersections[$vertical . "-" . $horizontal] += $stepNum;
+
+            } else {
+                //the coordinate is not in the intersection yet, get the current total stepNum and add to the intersection
+                $totalStepNum = 0;
+                foreach ($circuitBoard[$vertical][$horizontal] as $stepNum) {
+                    $totalStepNum += $stepNum;
+                }
+                $intersections[$vertical . "-" . $horizontal] = $totalStepNum;
+            }
         }
     }
 }
